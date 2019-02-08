@@ -74,8 +74,8 @@
     <LibraryPath>C:\Users\VR\Downloads\OpenGL\libraries;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>C:\Users\VR\Downloads\SDKs and Libraries\Oculus Rift SDK\LibOVR\Include;C:\Users\VR\Downloads\OpenGL\includes\glm;C:\Users\VR\Downloads\OpenGL\includes\glfw\includes;C:\Users\VR\Downloads\OpenGL\includes\glad\include;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Users\VR\Downloads\SDKs and Libraries\Oculus Rift SDK\LibOVR\Lib\Windows\x64\Release\VS2017;C:\Users\VR\Downloads\OpenGL\libraries;$(LibraryPath)</LibraryPath>
+    <IncludePath>C:\Users\VR\Downloads\SDKs and Libraries\Oculus Rift SDK\LibOVRKernel\Src;C:\Users\VR\Downloads\SDKs and Libraries\Oculus Rift SDK\LibOVR\Include;C:\Users\VR\Downloads\OpenGL\includes\glm;C:\Users\VR\Downloads\OpenGL\includes\glfw\includes;C:\Users\VR\Downloads\OpenGL\includes\glad\include;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\Users\VR\source\repos\TestOpenGL\TestOpenGL\libs\LibOVR Lib\Windows\x64\Debug\VS2017;C:\Users\VR\Downloads\OpenGL\libraries;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -94,6 +94,7 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
     </ClCompile>
     <Link>
       <AdditionalDependencies>glfw3.lib;LibOVR.lib;%(AdditionalDependencies)</AdditionalDependencies>
