@@ -25,6 +25,7 @@
 #include <algorithm>
 #include <vector> 
 #include <string>
+#include <thread>
 
 #ifndef OVR_DEBUG_LOG
 #define OVR_DEBUG_LOG(x)
@@ -38,7 +39,7 @@ void processInput(GLFWwindow *window);
 unsigned int loadTexture(const char *path);
 unsigned int loadCubemap(std::vector<std::string> faces); 
 static ovrVector3f QuatToEulerAngle(ovrQuatf q);
-void renderScene(Shader s1, Shader s2, glm::mat4 proj);
+void renderScene(Shader s1, Shader s2, glm::mat4 proj, glm::mat4 viewMat);
 static int Compare(const ovrGraphicsLuid& lhs, const ovrGraphicsLuid& rhs)
 {
 	return memcmp(&lhs, &rhs, sizeof(ovrGraphicsLuid));
@@ -49,7 +50,7 @@ const unsigned int SCR_WIDTH = 1280;
 const unsigned int SCR_HEIGHT = 720;
 
 // camera
-Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
+Camera camera(glm::vec3(0.0f, 0.0f, -3.0f));
 float lastX = (float)SCR_WIDTH / 2.0;
 float lastY = (float)SCR_HEIGHT / 2.0;
 bool firstMouse = true;
@@ -68,6 +69,10 @@ unsigned int skyboxVAO, skyboxVBO;
 // textures
 unsigned int cubeTexture;
 unsigned int cubemapTexture;
+
+// orientation and position
+static float Yaw(3.141592f);
+static OVR::Vector3f Pos2(0.0f, 0.0f, -3.0f);
 
 struct OculusTextureBuffer
 {
@@ -247,6 +252,7 @@ int main()
 	glfwSetScrollCallback(window, scroll_callback);
 
 	// tell GLFW to capture our mouse
+	// ------------------------------
 	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
 
 	// glad: load all OpenGL function pointers
@@ -489,14 +495,12 @@ int main()
 		lastFrame = currentFrame;
 
 		// rendering scene
-		// ------
+		// ---------------
 		glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		renderScene(shader, skyboxShader, glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f));
-
-		// LibOVR: handling session status
-		// --------------------------------------
+		// LibOVR: handling session status and rendering to HMD
+		// ----------------------------------------------------
 		ovrSessionStatus sessionStatus;
 		ovr_GetSessionStatus(session, &sessionStatus);
 
@@ -508,8 +512,6 @@ int main()
 
 		if (sessionStatus.IsVisible) {
 
-			static float Yaw(3.141592f);
-			static OVR::Vector3f Pos2(0.0f, 0.0f, -5.0f);
 
 			// Head tracking
 			ovrTrackingState ts = ovr_GetTrackingState(session, 0.0, ovrTrue);
@@ -540,26 +542,28 @@ int main()
 
 			ovrTimewarpProjectionDesc posTimewarpProjectionDesc = {};
 
-			// rendering scene
-			// ------
-			glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
-			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-			renderScene(shader, skyboxShader, glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f));
-
 			// Render Scene to Eye Buffers
 			for (int eye = 0; eye < 2; ++eye)
 			{
 				// Switch to eye render target
 				eyeRenderTexture[eye]->SetAndClearRenderSurface();
 
-				// Get projection matricx
+				// Get view matrix
+				OVR::Matrix4f rollPitchYaw = OVR::Matrix4f::RotationY(Yaw);
+				OVR::Matrix4f finalRollPitchYaw = rollPitchYaw * OVR::Matrix4f(EyeRenderPose[eye].Orientation);
+				OVR::Vector3f finalUp = finalRollPitchYaw.Transform(OVR::Vector3f(0, 1, 0));
+				OVR::Vector3f finalForward = finalRollPitchYaw.Transform(OVR::Vector3f(0, 0, -1));
+				OVR::Vector3f shiftedEyePos = Pos2 + rollPitchYaw.Transform(EyeRenderPose[eye].Position);
+				OVR::Matrix4f view = OVR::Matrix4f::LookAtRH(shiftedEyePos, shiftedEyePos + finalForward, finalUp);
+				glm::mat4 glmview = glm::transpose(glm::make_mat4(&view.M[0][0]));
+
+				// Get projection matrix
 				OVR::Matrix4f proj = ovrMatrix4f_Projection(hmdDesc.DefaultEyeFov[eye], 0.2f, 1000.0f, ovrProjection_None);
 				posTimewarpProjectionDesc = ovrTimewarpProjectionDesc_FromProjection(proj, ovrProjection_None);
+				glm::mat4 glmproj = glm::transpose(glm::make_mat4(&proj.M[0][0]));
 
 				// Render scene
-				glm::mat4 glmproj = glm::transpose(glm::make_mat4(&proj.M[0][0]));
-				renderScene(shader, skyboxShader, glmproj);
+				renderScene(shader, skyboxShader, glmproj, glmview);
 
 				// Avoids an error when calling SetAndClearRenderSurface during next iteration.
 				// Without this, during the next while loop iteration SetAndClearRenderSurface
@@ -597,6 +601,16 @@ int main()
 			frameIndex++;
 		}
 
+		// Unbind the FBO, back to normal drawing
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+		renderScene(
+			shader,
+			skyboxShader,
+			glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f),
+			camera.GetViewMatrix()
+		);
+
 		// input
 		// -----
 		processInput(window);
@@ -630,21 +644,11 @@ Done:
 	return 0;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/********************************/
+/**  Function implementations  **/
+/**                            **/
+/********************************/
+/********************************/
 
 // process all input: query GLFW whether relevant keys are pressed/released this frame and react accordingly
 // ---------------------------------------------------------------------------------------------------------
@@ -652,15 +656,6 @@ void processInput(GLFWwindow *window)
 {
 	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
 		glfwSetWindowShouldClose(window, true);
-
-	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-		camera.ProcessKeyboard(FORWARD, deltaTime);
-	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-		camera.ProcessKeyboard(BACKWARD, deltaTime);
-	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-		camera.ProcessKeyboard(LEFT, deltaTime);
-	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-		camera.ProcessKeyboard(RIGHT, deltaTime);
 }
 
 // glfw: whenever the window size changed (by OS or user resize) this callback function executes
@@ -804,11 +799,11 @@ static ovrVector3f QuatToEulerAngle(ovrQuatf q)
 	return v;
 }
 
-void renderScene(Shader shader, Shader skyboxShader, glm::mat4 proj) {
+void renderScene(Shader shader, Shader skyboxShader, glm::mat4 proj, glm::mat4 viewMat) {
 	// draw scene as normal
 	shader.use();
 	glm::mat4 model = glm::mat4(1.0f);
-	glm::mat4 view = camera.GetViewMatrix();
+	glm::mat4 view = viewMat;//camera.GetViewMatrix();
 	glm::mat4 projection = proj; // glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f)
 	shader.setMat4("model", model);
 	shader.setMat4("view", view);
