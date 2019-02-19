@@ -6,6 +6,7 @@
 #include <glm/gtc/type_ptr.hpp>
 
 #include "shader.h"
+#include "Sphere.h"
 
 #ifndef SCENE_H
 #define SCENE_H
@@ -16,8 +17,9 @@ public:
 	// Variables
 	unsigned int	cubeVAO, cubeVBO;
 	unsigned int	skyboxVAO, skyboxVBO;
-	unsigned int	cubeTexture;
-	unsigned int	cubemapTexture;
+	unsigned int	skysphereVAO, skysphereVBO;
+	unsigned int	cubeTexture, cubemapTexture, skysphereTexture;
+	Sphere*			sphere;
 
 	// Constructor & Deconstructor
 	Scene();
@@ -25,7 +27,7 @@ public:
 
 	// Methods
 	int init();
-	void render(Shader shader, Shader skyboxShader, glm::mat4 proj, glm::mat4 viewMat);
+	void render(Shader shader, Shader skyShader, glm::mat4 proj, glm::mat4 viewMat);
 };
 
 #endif // SCENE_H

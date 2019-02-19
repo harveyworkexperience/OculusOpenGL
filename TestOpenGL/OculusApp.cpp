@@ -1,5 +1,11 @@
 #include "OculusApp.h"
 
+#define FAIL(X) throw std::runtime_error(X)
+
+#ifndef OVR_DEBUG_LOG
+#define OVR_DEBUG_LOG(x)
+#endif
+
 // OculusTextureBuffer Method Implementations
 // ------------------------------------------
 OculusTextureBuffer::OculusTextureBuffer(ovrSession session, ovrSizei size, int sampleCount) :

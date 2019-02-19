@@ -8,12 +8,6 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
-#define FAIL(X) throw std::runtime_error(X)
-
-#ifndef OVR_DEBUG_LOG
-#define OVR_DEBUG_LOG(x)
-#endif
-
 static int Compare(const ovrGraphicsLuid& lhs, const ovrGraphicsLuid& rhs)
 {
 	return memcmp(&lhs, &rhs, sizeof(ovrGraphicsLuid));
@@ -81,6 +75,44 @@ unsigned int VRApp::loadTexture(char const * path)
 	else
 	{
 		std::cout << "Texture failed to load at path: " << path << std::endl;
+		stbi_image_free(data);
+	}
+
+	return textureID;
+}
+
+// utility function for loading a 2D texture from memory
+// -----------------------------------------------------
+unsigned int VRApp::loadTextureFromMemory(unsigned char* const buffer, int bufferlen) {
+	unsigned int textureID;
+	glGenTextures(1, &textureID);
+
+	int width, height, nrComponents;
+	unsigned char *data = stbi_load_from_memory(buffer, bufferlen, &width, &height, &nrComponents, 0);
+	if (data)
+	{
+		GLenum format;
+		if (nrComponents == 1)
+			format = GL_RED;
+		else if (nrComponents == 3)
+			format = GL_RGB;
+		else if (nrComponents == 4)
+			format = GL_RGBA;
+
+		glBindTexture(GL_TEXTURE_2D, textureID);
+		glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
+		glGenerateMipmap(GL_TEXTURE_2D);
+
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+		stbi_image_free(data);
+	}
+	else
+	{
+		std::cout << "Texture failed to load from memory!" << std::endl;
 		stbi_image_free(data);
 	}
 
@@ -188,9 +220,13 @@ int VRApp::run()
 		(const char*)(resourcePath + "shaders/cubemap.vs").c_str(),
 		(const char*)(resourcePath + "shaders/cubemap.fs").c_str()
 	);
-	Shader skyboxShader(
-		(const char*)(resourcePath + "shaders/skybox.vs").c_str(),
-		(const char*)(resourcePath + "shaders/skybox.fs").c_str()
+	//Shader skyboxShader(
+	//	(const char*)(resourcePath + "shaders/skybox.vs").c_str(),
+	//	(const char*)(resourcePath + "shaders/skybox.fs").c_str()
+	//);
+	Shader skysphereShader(
+		(const char*)(resourcePath + "shaders/skysphere.vs").c_str(),
+		(const char*)(resourcePath + "shaders/skysphere.fs").c_str()
 	);
 
 	// preparing a scene
@@ -202,26 +238,34 @@ int VRApp::run()
 	// -------------
 	TheScene->cubeTexture = loadTexture((const char*)(resourcePath + "textures/container.jpg").c_str());
 
-	std::vector<std::string> faces
-	{
-		(resourcePath + "textures/skybox/right.jpg"),
-		(resourcePath + "textures/skybox/left.jpg"),
-		(resourcePath + "textures/skybox/top.jpg"),
-		(resourcePath + "textures/skybox/bottom.jpg"),
-		(resourcePath + "textures/skybox/front.jpg"),
-		(resourcePath + "textures/skybox/back.jpg")
-	};
-	TheScene->cubemapTexture = loadCubemap(faces);
+	//std::vector<std::string> faces
+	//{
+	//	(resourcePath + "textures/skybox/right.jpg"),
+	//	(resourcePath + "textures/skybox/left.jpg"),
+	//	(resourcePath + "textures/skybox/top.jpg"),
+	//	(resourcePath + "textures/skybox/bottom.jpg"),
+	//	(resourcePath + "textures/skybox/front.jpg"),
+	//	(resourcePath + "textures/skybox/back.jpg")
+	//};
+	//TheScene->cubemapTexture = loadCubemap(faces);
+
+	unsigned int t1 = loadTexture((const char*)(resourcePath + "textures/img2.jpg").c_str());
+	unsigned int t2 = loadTexture((const char*)(resourcePath + "textures/earth.jpg").c_str());
+	TheScene->skysphereTexture = t1;
+	//TheScene->skysphereTexture = loadTextureFromMemory((unsigned char* const)pvrtcBytes, 96660);
 
 	// shader configuration
 	// --------------------
 	shader.use();
 	shader.setInt("texture1", 0);
 
-	skyboxShader.use();
-	skyboxShader.setInt("skybox", 0);
+	//skyboxShader.use();
+	//skyboxShader.setInt("skybox", 0);
 
-	// LibOVR: initialising and configuring
+	skysphereShader.use();
+	skysphereShader.setInt("skysphere", 0);
+
+	// Oculus: initialising and configuring
 	// ------------------------------------
 	TheOculusApp = new OculusApp();
 	if (TheOculusApp->init() > 0)
@@ -230,29 +274,29 @@ int VRApp::run()
 	// Turn off vsync to let the compositor do its magic
 	glfwSwapInterval(0);
 
-	// render loop
-	// -----------
+	// glfw: render loop
+	// -----------------
 	while (!glfwWindowShouldClose(window))
 	{
-		// per-frame time logic
-		// --------------------
+		// glfw: per-frame time logic
+		// --------------------------
 		float currentFrame = glfwGetTime();
 		deltaTime = currentFrame - lastFrame;
 		lastFrame = currentFrame;
 
-		// rendering scene
-		// ---------------
+		// OpenGL: rendering scene
+		// -----------------------
 		glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		// LibOVR: handling session status and rendering to HMD
+		// Oculus: handling session status and rendering to HMD
 		// ----------------------------------------------------
 		glfwGetWindowSize(window, &SCR_WIDTH, &SCR_HEIGHT);
-		if (TheOculusApp->render(TheScene, shader, skyboxShader, SCR_WIDTH, SCR_HEIGHT) > 0)
+		if (TheOculusApp->render(TheScene, shader, skysphereShader, SCR_WIDTH, SCR_HEIGHT) > 0)
 			break;
 
-		// input
-		// -----
+		// glfw: input
+		// -----------
 		processInput(window);
 
 		// glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)

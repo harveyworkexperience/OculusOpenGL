@@ -97,7 +97,7 @@
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>glfw3.lib;LibOVR.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>glfw3.lib;LibOVR.lib;wsock32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -130,15 +130,21 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="glad.c" />
+    <ClCompile Include="ImageProcessor.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="OculusApp.cpp" />
     <ClCompile Include="Scene.cpp" />
+    <ClCompile Include="Sphere.cpp" />
+    <ClCompile Include="UDPClient.cpp" />
+    <ClCompile Include="UDPClient.h" />
     <ClCompile Include="VRApp.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="ImageProcessor.h" />
     <ClInclude Include="OculusApp.h" />
     <ClInclude Include="Scene.h" />
     <ClInclude Include="shader.h" />
+    <ClInclude Include="Sphere.h" />
     <ClInclude Include="stb_image.h" />
     <ClInclude Include="VRApp.h" />
   </ItemGroup>
