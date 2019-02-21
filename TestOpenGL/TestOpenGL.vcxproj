@@ -135,12 +135,11 @@
     <ClCompile Include="OculusApp.cpp" />
     <ClCompile Include="Scene.cpp" />
     <ClCompile Include="Sphere.cpp" />
-    <ClCompile Include="UDPClient.cpp" />
-    <ClCompile Include="UDPClient.h" />
     <ClCompile Include="VRApp.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ImageProcessor.h" />
+    <ClInclude Include="Network.h" />
     <ClInclude Include="OculusApp.h" />
     <ClInclude Include="Scene.h" />
     <ClInclude Include="shader.h" />

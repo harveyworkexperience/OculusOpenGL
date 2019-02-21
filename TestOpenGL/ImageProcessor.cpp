@@ -1,5 +1,6 @@
 #include "ImageProcessor.h"
 #include <fstream>
+#include <limits.h>
 
 ImageProcessor::ImageProcessor() 
 {
@@ -8,7 +9,6 @@ ImageProcessor::ImageProcessor()
 	bufPtr = 0;
 	imageReady = false;
 	recv_len = 0;
-	uc = new UDPClient();
 }
 
 ImageProcessor::~ImageProcessor() 
@@ -17,29 +17,31 @@ ImageProcessor::~ImageProcessor()
 		SignalImageUsed();
 		stopRecv = true;
 		TheThread.join();
+		delete Socket;
+		delete Session;
 	}
-	delete uc;
 }
 
 int ImageProcessor::init(std::string ipAddr, unsigned short portNum)
 {
-	if (uc->init(ipAddr, portNum) < 0)
-		return -1;
-	// Asking to receive stream from server
-	int sent_len = 0;
-	if ((sent_len = uc->udpsendto("Send me stuff!", 14)) < 0) {
-		std::cerr << "Unable to send message to server!" << std::endl;
-		return -1;
+	char buf[100];
+	try
+	{
+		Session = new WSASession();
+		Socket = new UDPSocket();
+		Socket->SendTo(ipAddr, 11000, "Send me stuff!", 14);
+		Socket->RecvFrom(buf, 100);
+		std::cout << buf << std::endl;
 	}
-	char buf[1000];
-	int recv_len = 0;
-	if ((recv_len = uc->udprecvfrom(buf, 1000)) < 0) {
-		std::cerr << "Unable to receive message from server!" << std::endl;
+	catch (std::system_error& e)
+	{
+		std::cout << e.what();
 		return -1;
 	}
 
 	stopRecv = false;
 	TheThread = std::thread([this] { this->ReceiveBytes(); });
+
 	return 0;
 }
 
@@ -72,20 +74,22 @@ void ImageProcessor::SignalImageUsed()
 
 void ImageProcessor::ReceiveBytes()
 {
+	std::cout << "CHAR_MIN = " << CHAR_MIN << std::endl;
+	std::cout << "Thread started ..." << std::endl;
 	while (!stopRecv)
 	{
 		// Looking for JPEG headers
 		imageReady = false;
 		int foundJPGHeader = 0;
 		char byte;
-		std::cout << 1 << std::endl;
+		//std::cout << 1 << std::endl;
 		while (!stopRecv)
 		{
-			std::cout << 2 << std::endl;
+			//std::cout << 2 << std::endl;
 			byte = (char)GetStreamByte();
-			if (byte > (char)255 || byte < (char)0)
-				break;
-			if (byte == 0xff)
+			if (stopRecv)
+				return;
+			if (byte == (char)0xff)
 				foundJPGHeader = 1;
 			else if (byte == (char)0xd8 && foundJPGHeader == 1)
 				break;
@@ -94,9 +98,10 @@ void ImageProcessor::ReceiveBytes()
 		}
 
 		if (stopRecv)
-			break;
+			return;
 
-		std::cout << 3 << std::endl;
+		//std::cout << 3 << std::endl;
+
 		// Initialising new image
 		int byteCount = 0;
 		memset(image, 0, IMGSIZE);
@@ -104,7 +109,9 @@ void ImageProcessor::ReceiveBytes()
 		image[byteCount++] = (char)0xd8;
 
 		// Building image
-		std::cout << 4 << std::endl;
+		
+		//std::cout << 4 << std::endl;
+
 		int endFlag = 0;
 		while (byteCount < IMGSIZE && !stopRecv)
 		{
@@ -128,12 +135,6 @@ void ImageProcessor::ReceiveBytes()
 		image[byteCount - 1] = (char)0xd9;
 		imageLength = byteCount;
 		imageReady = true;
-
-		std::ofstream out("../../../../Downloads/OpenGL/app_resources/file1.jpg");
-		out << std::string(image, byteCount);
-		out.close();
-		std::cout << "DOOONE" << std::endl;
-		Sleep(5000);
 		
 		// Waiting for signal to modify image
 		std::unique_lock<std::mutex> lck(mtx);
@@ -151,11 +152,13 @@ char ImageProcessor::GetStreamByte()
 		memset(buffer, 0, BUFSIZE);
 		recv_len = 0;
 		// buffer has to be larger than receive packet
-		if ((recv_len = uc->udprecvfrom(buffer, BUFSIZE)) < 0) {
-			stopRecv = true;
-			return 0;
+		try {
+			recv_len = Socket->RecvFrom(buffer, BUFSIZE);
 		}
-
+		catch (std::exception &ex) {
+			std::cout << ex.what() << std::endl;
+			stopRecv = true;
+		}
 		bufInit = true;
 		bufPtr = 0;
 	}

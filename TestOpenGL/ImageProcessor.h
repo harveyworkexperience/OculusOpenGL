@@ -5,7 +5,7 @@
 #include <mutex>
 #include <thread>
 #include <condition_variable>
-#include "UDPClient.h"
+#include "Network.h"
 
 #ifndef IMAGE_PROCESSOR_H
 #define IMAGE_PROCESSOR_H
@@ -25,10 +25,11 @@ public:
 	int							recv_len;
 	bool						stopRecv;
 	bool						imageReady;
-	UDPClient*					uc;
 	std::mutex					mtx;
 	std::condition_variable		cv;
 	std::thread					TheThread;
+	WSASession*					Session;
+	UDPSocket*					Socket;
 
 	// Constructor & Deconstructor
 	ImageProcessor();

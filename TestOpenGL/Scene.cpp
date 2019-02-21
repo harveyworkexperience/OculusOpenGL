@@ -108,7 +108,7 @@ void Scene::render(Shader shader, Shader skyShader, glm::mat4 proj, glm::mat4 vi
 	shader.setMat4("view", view);
 	shader.setMat4("projection", projection);
 
-	// cube
+	// cube - Used to help to see the direction.
 	glBindVertexArray(cubeVAO);
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, cubeTexture);

@@ -296,7 +296,6 @@ int VRApp::run()
 		// Updating skysphere texture
 		if (TheImageProcessor->imageReady)
 		{
-			std::cout << "Image Length = " << TheImageProcessor->imageLength << std::endl;
 			TheScene->skysphereTexture = loadTextureFromMemory((unsigned char* const)TheImageProcessor->image, TheImageProcessor->imageLength);
 			TheImageProcessor->SignalImageUsed();
 		}
