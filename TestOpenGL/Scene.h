@@ -26,8 +26,8 @@ public:
 	~Scene();
 
 	// Methods
-	int init();
-	void render(Shader shader, Shader skyShader, glm::mat4 proj, glm::mat4 viewMat);
+	int				Init();
+	void			Render(Shader shader, Shader skyShader, glm::mat4 proj, glm::mat4 viewMat);
 };
 
 #endif // SCENE_H

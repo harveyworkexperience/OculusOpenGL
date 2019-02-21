@@ -1,3 +1,13 @@
+/*
+ * sphere.cpp
+ *
+ * Using method described:
+ * http://stackoverflow.com/questions/5988686/how-do-i-create-a-3d-sphere-in-opengl-using-visual-c
+ * and various other places.
+ *
+ * From university's example code.
+ */
+
 #ifndef SPHERE_H
 #define SPHERE_H
 
@@ -17,16 +27,16 @@ public:
 	Sphere(bool negNorms = false, float radius = 1.0f, int vertDiv = 16, int horzDiv = 16);
 	~Sphere();
 
-	float *vertices;		// Vertex position (x,y,z)
-	float *normals;			// Normal vector (x,y,z)
-	float *texcoords;       // Tex coords s, t
-	unsigned int *indices;	// Element indices
+	float				*vertices;		// Vertex position (x,y,z)
+	float				*normals;		// Normal vector (x,y,z)
+	float				*texcoords;		// Tex coords s, t
+	unsigned int		*indices;		// Element indices
 
 	// Counts of array elements
-	int vertCount;
-	int normCount;
-	int texCount;
-	int indCount;
+	int					vertCount;
+	int					normCount;
+	int					texCount;
+	int					indCount;
 
 };
 

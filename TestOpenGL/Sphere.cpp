@@ -1,10 +1,11 @@
-
 /*
  * sphere.cpp
  *
  * Using method described:
  * http://stackoverflow.com/questions/5988686/how-do-i-create-a-3d-sphere-in-opengl-using-visual-c
  * and various other places.
+ * 
+ * From university's example code.
  */
 
 #include <math.h>

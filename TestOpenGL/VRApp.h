@@ -39,10 +39,10 @@ public:
 	~VRApp();
 
 	// Methods
-	unsigned int loadTexture(const char *path);
-	unsigned int loadCubemap(std::vector<std::string> faces);
-	unsigned int loadTextureFromMemory(unsigned char* buffer, int bufferlen);
-	int run();
+	unsigned int			loadTexture(const char *path);
+	unsigned int			loadCubemap(std::vector<std::string> faces);
+	unsigned int			loadTextureFromMemory(unsigned char* buffer, int bufferlen);
+	int						run();
 };
 
 #endif //VR_APP_H

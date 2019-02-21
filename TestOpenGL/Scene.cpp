@@ -52,7 +52,7 @@ Scene::Scene()
 	sphere = new Sphere(false, 1000.0f, 16, 16);
 }
 
-int Scene::init() 
+int Scene::Init() 
 {
 	// cube VAO
 	glGenVertexArrays(1, &cubeVAO);
@@ -98,7 +98,7 @@ int Scene::init()
 	return 0;
 }
 
-void Scene::render(Shader shader, Shader skyShader, glm::mat4 proj, glm::mat4 viewMat)
+void Scene::Render(Shader shader, Shader skyShader, glm::mat4 proj, glm::mat4 viewMat)
 {
 	shader.use();
 	glm::mat4 model = glm::mat4(1.0f);

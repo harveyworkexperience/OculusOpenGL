@@ -250,7 +250,7 @@ int VRApp::run()
 	// preparing a scene
 	// -----------------
 	TheScene = new Scene();
-	TheScene->init();
+	TheScene->Init();
 
 	// load textures
 	// -------------
@@ -271,19 +271,19 @@ int VRApp::run()
 
 	// Receiving livestream
 	ImageProcessor* TheImageProcessor = new ImageProcessor();
-	int tip_flag = TheImageProcessor->init("192.168.56.1", 11000);
+	int tip_flag = TheImageProcessor->Init("192.168.56.1", 11000);
 
 	// Oculus: initialising and configuring
 	// ------------------------------------
 	TheOculusApp = new OculusApp();
 	int num = 0;
-	if (TheOculusApp->init() > 0 || tip_flag < 0)
+	if (TheOculusApp->Init() > 0 || tip_flag < 0)
 		goto Done;
 
 	// Turn off vsync to let the compositor do its magic
 	glfwSwapInterval(0);
 
-	// glfw: render loop
+	// glfw: Render loop
 	// -----------------
 	while (!glfwWindowShouldClose(window))
 	{
@@ -308,7 +308,7 @@ int VRApp::run()
 		// Oculus: handling session status and rendering to HMD
 		// ----------------------------------------------------
 		glfwGetWindowSize(window, &SCR_WIDTH, &SCR_HEIGHT);
-		if (TheOculusApp->render(TheScene, shader, skysphereShader, SCR_WIDTH, SCR_HEIGHT) != 0)
+		if (TheOculusApp->Render(TheScene, shader, skysphereShader, SCR_WIDTH, SCR_HEIGHT) != 0)
 			break;
 
 		// glfw: input

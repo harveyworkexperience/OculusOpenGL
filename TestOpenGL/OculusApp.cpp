@@ -163,7 +163,7 @@ OculusApp::~OculusApp()
 	ovr_Shutdown();
 }
 
-int OculusApp::init()
+int OculusApp::Init()
 {
 	eyeRenderTexture[0] = nullptr;
 	eyeRenderTexture[1] = nullptr;
@@ -189,7 +189,7 @@ int OculusApp::init()
 	hmdDesc = ovr_GetHmdDesc(session);
 	windowSize = { hmdDesc.Resolution.w / 2, hmdDesc.Resolution.h / 2 };
 
-	// Make eye render buffers
+	// Make eye Render buffers
 	for (int eye = 0; eye < 2; ++eye)
 	{
 		ovrSizei idealTextureSize = ovr_GetFovTextureSize(session, ovrEyeType(eye), hmdDesc.DefaultEyeFov[eye], 1);
@@ -198,7 +198,7 @@ int OculusApp::init()
 		if (!eyeRenderTexture[eye]->ColorTextureChain || !eyeRenderTexture[eye]->DepthTextureChain || eyeRenderTexture[eye]->successfullyCreated != 0)
 		{
 			std::cout << eyeRenderTexture[eye]->successfullyCreated << ": Failed to create texture for eye " << eye << "." << std::endl;
-			return 2; // goto Done;
+			return 2;
 		}
 	}
 
@@ -231,7 +231,7 @@ int OculusApp::init()
 	return 0;
 }
 
-int OculusApp::render(Scene* TheScene, Shader shader, Shader skyboxShader, unsigned int SCR_WIDTH, unsigned int SCR_HEIGHT) 
+int OculusApp::Render(Scene* TheScene, Shader shader, Shader skyboxShader, unsigned int SCR_WIDTH, unsigned int SCR_HEIGHT) 
 {
 	ovrSessionStatus sessionStatus;
 	ovr_GetSessionStatus(session, &sessionStatus);
@@ -267,7 +267,7 @@ int OculusApp::render(Scene* TheScene, Shader shader, Shader skyboxShader, unsig
 		// Render Scene to Eye Buffers
 		for (int eye = 0; eye < 2; ++eye)
 		{
-			// Switch to eye render target
+			// Switch to eye Render target
 			eyeRenderTexture[eye]->SetAndClearRenderSurface();
 
 			// Get view matrix
@@ -286,7 +286,7 @@ int OculusApp::render(Scene* TheScene, Shader shader, Shader skyboxShader, unsig
 			glmproj = glm::transpose(glm::make_mat4(&proj.M[0][0]));
 
 			// Render scene
-			TheScene->render(shader, skyboxShader, glmproj, glmview);
+			TheScene->Render(shader, skyboxShader, glmproj, glmview);
 
 			// Avoids an error when calling SetAndClearRenderSurface during next iteration.
 			// Without this, during the next while loop iteration SetAndClearRenderSurface

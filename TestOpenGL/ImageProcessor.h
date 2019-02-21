@@ -36,11 +36,11 @@ public:
 	~ImageProcessor();
 
 	// Methods
-	int			init(std::string ipAddr, unsigned short portNum);
-	void		LoadImageBytesFromPath(std::string path);
-	void		ReceiveBytes();
-	void		SignalImageUsed();
-	char		GetStreamByte();
+	int							Init(std::string ipAddr, unsigned short portNum);
+	void						LoadImageBytesFromPath(std::string path);
+	void						ReceiveBytes();
+	void						SignalImageUsed();
+	char						GetStreamByte();
 };
 
 #endif //IMAGE_PROCESSOR_H

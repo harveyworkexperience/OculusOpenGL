@@ -22,7 +22,7 @@ ImageProcessor::~ImageProcessor()
 	}
 }
 
-int ImageProcessor::init(std::string ipAddr, unsigned short portNum)
+int ImageProcessor::Init(std::string ipAddr, unsigned short portNum)
 {
 	char buf[100];
 	try
@@ -82,10 +82,8 @@ void ImageProcessor::ReceiveBytes()
 		imageReady = false;
 		int foundJPGHeader = 0;
 		char byte;
-		//std::cout << 1 << std::endl;
 		while (!stopRecv)
 		{
-			//std::cout << 2 << std::endl;
 			byte = (char)GetStreamByte();
 			if (stopRecv)
 				return;
@@ -100,8 +98,6 @@ void ImageProcessor::ReceiveBytes()
 		if (stopRecv)
 			return;
 
-		//std::cout << 3 << std::endl;
-
 		// Initialising new image
 		int byteCount = 0;
 		memset(image, 0, IMGSIZE);
@@ -109,13 +105,9 @@ void ImageProcessor::ReceiveBytes()
 		image[byteCount++] = (char)0xd8;
 
 		// Building image
-		
-		//std::cout << 4 << std::endl;
-
 		int endFlag = 0;
 		while (byteCount < IMGSIZE && !stopRecv)
 		{
-			//std::cout << 5 << " " << stopRecv << std::endl;
 			char tempByte = GetStreamByte();
 			if (stopRecv) 
 				return;
@@ -128,8 +120,6 @@ void ImageProcessor::ReceiveBytes()
 				endFlag = 0;
 		}
 
-		//std::cout << 6 << std::endl;
-
 		// Finished building image
 		image[byteCount - 2] = (char)0xff;
 		image[byteCount - 1] = (char)0xd9;
@@ -139,8 +129,6 @@ void ImageProcessor::ReceiveBytes()
 		// Waiting for signal to modify image
 		std::unique_lock<std::mutex> lck(mtx);
 		cv.wait(lck);
-
-		//std::cout << 8 << std::endl;
 	}
 }
 

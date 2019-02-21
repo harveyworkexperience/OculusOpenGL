@@ -17,22 +17,22 @@
 struct OculusTextureBuffer
 {
 	// Variables
-	ovrSession          Session;
-	ovrTextureSwapChain ColorTextureChain;
-	ovrTextureSwapChain DepthTextureChain;
-	GLuint              fboId;
-	OVR::Sizei			texSize;
-	int					successfullyCreated;
+	ovrSession				Session;
+	ovrTextureSwapChain		ColorTextureChain;
+	ovrTextureSwapChain		DepthTextureChain;
+	GLuint					fboId;
+	OVR::Sizei				texSize;
+	int						successfullyCreated;
 
 	// Constructor & Deconstructor
 	OculusTextureBuffer(ovrSession session, ovrSizei size, int sampleCount);
 	~OculusTextureBuffer();
 
 	// Methods
-	OVR::Sizei GetSize() const;
-	void SetAndClearRenderSurface();
-	void UnsetRenderSurface();
-	void Commit();
+	OVR::Sizei				GetSize() const;
+	void					SetAndClearRenderSurface();
+	void					UnsetRenderSurface();
+	void					Commit();
 };
 
 class OculusApp 
@@ -55,8 +55,8 @@ public:
 	~OculusApp();
 
 	// Methods
-	int init();
-	int render(Scene* TheScene, Shader shader, Shader skyboxShader, unsigned int SCR_WIDTH, unsigned int SCR_HEIGHT);
+	int						Init();
+	int						Render(Scene* TheScene, Shader shader, Shader skyboxShader, unsigned int SCR_WIDTH, unsigned int SCR_HEIGHT);
 };
 
 #endif //OCULUS_APP_H
