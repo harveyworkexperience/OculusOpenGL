@@ -93,8 +93,8 @@ Sphere::Sphere(bool negNorms, float radius, int vertDiv, int horzDiv)
 }
 
 Sphere::~Sphere() {
-	delete(vertices);
-	delete(normals);
-	delete(texcoords);
-	delete(indices);
+	delete vertices;
+	delete normals;
+	delete texcoords;
+	delete indices;
 }

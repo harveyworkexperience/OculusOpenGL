@@ -46,50 +46,6 @@ float cubeVertices[] = {
 	-0.5f,  0.5f,  0.5f,  0.0f, 0.0f,
 	-0.5f,  0.5f, -0.5f,  0.0f, 1.0f
 };
-float skyboxVertices[] = {
-	// positions          
-	-1.0f,  1.0f, -1.0f,
-	-1.0f, -1.0f, -1.0f,
-	 1.0f, -1.0f, -1.0f,
-	 1.0f, -1.0f, -1.0f,
-	 1.0f,  1.0f, -1.0f,
-	-1.0f,  1.0f, -1.0f,
-
-	-1.0f, -1.0f,  1.0f,
-	-1.0f, -1.0f, -1.0f,
-	-1.0f,  1.0f, -1.0f,
-	-1.0f,  1.0f, -1.0f,
-	-1.0f,  1.0f,  1.0f,
-	-1.0f, -1.0f,  1.0f,
-
-	 1.0f, -1.0f, -1.0f,
-	 1.0f, -1.0f,  1.0f,
-	 1.0f,  1.0f,  1.0f,
-	 1.0f,  1.0f,  1.0f,
-	 1.0f,  1.0f, -1.0f,
-	 1.0f, -1.0f, -1.0f,
-
-	-1.0f, -1.0f,  1.0f,
-	-1.0f,  1.0f,  1.0f,
-	 1.0f,  1.0f,  1.0f,
-	 1.0f,  1.0f,  1.0f,
-	 1.0f, -1.0f,  1.0f,
-	-1.0f, -1.0f,  1.0f,
-
-	-1.0f,  1.0f, -1.0f,
-	 1.0f,  1.0f, -1.0f,
-	 1.0f,  1.0f,  1.0f,
-	 1.0f,  1.0f,  1.0f,
-	-1.0f,  1.0f,  1.0f,
-	-1.0f,  1.0f, -1.0f,
-
-	-1.0f, -1.0f, -1.0f,
-	-1.0f, -1.0f,  1.0f,
-	 1.0f, -1.0f, -1.0f,
-	 1.0f, -1.0f, -1.0f,
-	-1.0f, -1.0f,  1.0f,
-	 1.0f, -1.0f,  1.0f
-};
 
 Scene::Scene() 
 {
@@ -108,14 +64,6 @@ int Scene::init()
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
 	glEnableVertexAttribArray(1);
 	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
-	// skybox VAO
-	glGenVertexArrays(1, &skyboxVAO);
-	glGenBuffers(1, &skyboxVBO);
-	glBindVertexArray(skyboxVAO);
-	glBindBuffer(GL_ARRAY_BUFFER, skyboxVBO);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(skyboxVertices), &skyboxVertices, GL_STATIC_DRAW);
-	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
 
 	// skysphere VAO
 	// Using the sphere class to generate vertices and element indices
@@ -126,38 +74,26 @@ int Scene::init()
 
 	// Set vertex position attribute
 	glBindBuffer(GL_ARRAY_BUFFER, buffer[0]);
-	glBufferData(GL_ARRAY_BUFFER,
-		sizeof(float) * sphere->vertCount,
-		sphere->vertices,
-		GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(float) * sphere->vertCount, sphere->vertices, GL_STATIC_DRAW);
 	glEnableVertexAttribArray(0);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
 
 	// Normal attributes	- Probably don't even need this. OpenGL figures out what triangle is facing the user by looking at the winding order.
 	//						- Can use front face culling to increase performance.
 	glBindBuffer(GL_ARRAY_BUFFER, buffer[1]);
-	glBufferData(GL_ARRAY_BUFFER,
-		sizeof(float) * sphere->normCount,
-		sphere->normals,
-		GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(float) * sphere->normCount, sphere->normals, GL_STATIC_DRAW);
 	glEnableVertexAttribArray(1);
 	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, 0);
 
 	// Tex coords
 	glBindBuffer(GL_ARRAY_BUFFER, buffer[2]);
-	glBufferData(GL_ARRAY_BUFFER,
-		sizeof(float) * sphere->texCount,
-		sphere->texcoords,
-		GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(float) * sphere->texCount, sphere->texcoords, GL_STATIC_DRAW);
 	glEnableVertexAttribArray(2);
 	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, 0);
 
 	// Vertex indices
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer[3]);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER,
-		sizeof(unsigned int) * sphere->indCount,
-		sphere->indices,
-		GL_STATIC_DRAW);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int) * sphere->indCount, sphere->indices, GL_STATIC_DRAW);
 
 	return 0;
 }
@@ -179,21 +115,6 @@ void Scene::render(Shader shader, Shader skyShader, glm::mat4 proj, glm::mat4 vi
 	glDrawArrays(GL_TRIANGLES, 0, 36);
 	glBindVertexArray(0);
 
-	//// draw skybox as last
-	//glDepthFunc(GL_LEQUAL);  // change depth function so depth test passes when values are equal to depth buffer's content
-	//skyboxShader.use();
-	//view = glm::mat4(glm::mat3(viewMat)); // remove translation from the view matrix
-	//skyboxShader.setMat4("view", view);
-	//skyboxShader.setMat4("projection", projection);
-
-	//// skybox cube
-	//glBindVertexArray(skyboxVAO);
-	//glActiveTexture(GL_TEXTURE0);
-	//glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
-	//glDrawArrays(GL_TRIANGLES, 0, 36);
-	//glBindVertexArray(0);
-	//glDepthFunc(GL_LESS); // set depth function back to default
-
 	// sphere
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_FRONT);
@@ -214,7 +135,7 @@ void Scene::render(Shader shader, Shader skyShader, glm::mat4 proj, glm::mat4 vi
 
 Scene::~Scene()
 {
-	delete(sphere);
+	delete sphere;
 	glDeleteVertexArrays(1, &cubeVAO);
 	glDeleteVertexArrays(1, &skyboxVAO);
 	glDeleteVertexArrays(1, &skysphereVAO);

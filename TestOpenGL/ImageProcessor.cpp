@@ -3,11 +3,45 @@
 
 ImageProcessor::ImageProcessor() 
 {
-	stop = false;
+	stopRecv = true;
+	bufInit = false;
+	bufPtr = 0;
 	imageReady = false;
-};
+	recv_len = 0;
+	uc = new UDPClient();
+}
 
-ImageProcessor::~ImageProcessor() {};
+ImageProcessor::~ImageProcessor() 
+{
+	if (!stopRecv) {
+		SignalImageUsed();
+		stopRecv = true;
+		TheThread.join();
+	}
+	delete uc;
+}
+
+int ImageProcessor::init(std::string ipAddr, unsigned short portNum)
+{
+	if (uc->init(ipAddr, portNum) < 0)
+		return -1;
+	// Asking to receive stream from server
+	int sent_len = 0;
+	if ((sent_len = uc->udpsendto("Send me stuff!", 14)) < 0) {
+		std::cerr << "Unable to send message to server!" << std::endl;
+		return -1;
+	}
+	char buf[1000];
+	int recv_len = 0;
+	if ((recv_len = uc->udprecvfrom(buf, 1000)) < 0) {
+		std::cerr << "Unable to receive message from server!" << std::endl;
+		return -1;
+	}
+
+	stopRecv = false;
+	TheThread = std::thread([this] { this->ReceiveBytes(); });
+	return 0;
+}
 
 void ImageProcessor::LoadImageBytesFromPath(std::string path) 
 {
@@ -19,26 +53,111 @@ void ImageProcessor::LoadImageBytesFromPath(std::string path)
 	infile.seekg(0, infile.beg);
 
 	// don't overflow the buffer!
-	if (imageLength > sizeof(buffer))
+	if (imageLength > sizeof(image))
 	{
-		imageLength = sizeof(buffer);
+		imageLength = sizeof(image);
 	}
 
 	//read file
-	infile.read(buffer, imageLength);
+	infile.read(image, imageLength);
 }
 
-char* ImageProcessor::GetImage()
+void ImageProcessor::SignalImageUsed()
 {
-	return buffer;
+	if (imageReady) {
+		imageReady = false;
+		cv.notify_one();
+	}
 }
 
 void ImageProcessor::ReceiveBytes()
 {
-	while (stop)
+	while (!stopRecv)
 	{
+		// Looking for JPEG headers
+		imageReady = false;
 		int foundJPGHeader = 0;
-		char b;
+		char byte;
+		std::cout << 1 << std::endl;
+		while (!stopRecv)
+		{
+			std::cout << 2 << std::endl;
+			byte = (char)GetStreamByte();
+			if (byte > (char)255 || byte < (char)0)
+				break;
+			if (byte == 0xff)
+				foundJPGHeader = 1;
+			else if (byte == (char)0xd8 && foundJPGHeader == 1)
+				break;
+			else
+				foundJPGHeader = 0;
+		}
 
+		if (stopRecv)
+			break;
+
+		std::cout << 3 << std::endl;
+		// Initialising new image
+		int byteCount = 0;
+		memset(image, 0, IMGSIZE);
+		image[byteCount++] = (char)0xff;
+		image[byteCount++] = (char)0xd8;
+
+		// Building image
+		std::cout << 4 << std::endl;
+		int endFlag = 0;
+		while (byteCount < IMGSIZE && !stopRecv)
+		{
+			//std::cout << 5 << " " << stopRecv << std::endl;
+			char tempByte = GetStreamByte();
+			if (stopRecv) 
+				return;
+			image[byteCount++] = tempByte;
+			if (tempByte == (char)0xff && endFlag == 0)
+				endFlag++;
+			else if (tempByte == (char)0xd9 && endFlag == 1)
+				break;
+			else
+				endFlag = 0;
+		}
+
+		//std::cout << 6 << std::endl;
+
+		// Finished building image
+		image[byteCount - 2] = (char)0xff;
+		image[byteCount - 1] = (char)0xd9;
+		imageLength = byteCount;
+		imageReady = true;
+
+		std::ofstream out("../../../../Downloads/OpenGL/app_resources/file1.jpg");
+		out << std::string(image, byteCount);
+		out.close();
+		std::cout << "DOOONE" << std::endl;
+		Sleep(5000);
+		
+		// Waiting for signal to modify image
+		std::unique_lock<std::mutex> lck(mtx);
+		cv.wait(lck);
+
+		//std::cout << 8 << std::endl;
 	}
+}
+
+char ImageProcessor::GetStreamByte()
+{
+	// Updating buffer
+	if (!bufInit || bufPtr >= recv_len)
+	{
+		memset(buffer, 0, BUFSIZE);
+		recv_len = 0;
+		// buffer has to be larger than receive packet
+		if ((recv_len = uc->udprecvfrom(buffer, BUFSIZE)) < 0) {
+			stopRecv = true;
+			return 0;
+		}
+
+		bufInit = true;
+		bufPtr = 0;
+	}
+	return buffer[bufPtr++];
 }

@@ -25,6 +25,7 @@ public:
 	int b1, b2, b3, b4;									/* Client address components in xxx.xxx.xxx.xxx form */
 	char host_name[256];								/* Host name of this computer */
 	bool ready;											/* Used to check if init was called */
+	bool sock_opened;									/* Flag to check if socket is currently opened */
 
 	UDPClient();
 	~UDPClient();

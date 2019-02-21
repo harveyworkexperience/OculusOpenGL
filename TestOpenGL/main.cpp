@@ -5,5 +5,5 @@ int main()
 {
 	VRApp* TheVRApp = new VRApp();
 	TheVRApp->run();
-	delete(TheVRApp);
+	delete TheVRApp;
 }

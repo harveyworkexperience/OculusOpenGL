@@ -4,12 +4,16 @@
 UDPClient::UDPClient()
 {
 	ready = false;
+	sock_opened = false;
 }
 
 UDPClient::~UDPClient()
 {
-	closesocket(sd);
-	WSACleanup();
+	if (sock_opened) 
+	{
+		closesocket(sd);
+		WSACleanup();
+	}
 };
 
 int UDPClient::init(std::string serverAddress, unsigned short portNumber)
@@ -18,10 +22,10 @@ int UDPClient::init(std::string serverAddress, unsigned short portNumber)
 	std::string token;
 	int count = 0;
 	int* a_arr[4] = { &a1,&a2,&a3,&a4 };
-	while (std::getline(ss, token, '.')) {
-		*a_arr[count] = std::stoi(token);
-		count++;
-	}
+
+	while (std::getline(ss, token, '.')) 
+		*a_arr[count++] = std::stoi(token);
+
 	if (count != 4)
 		return -1;
 
@@ -38,10 +42,11 @@ int UDPClient::init(std::string serverAddress, unsigned short portNumber)
 	sd = socket(AF_INET, SOCK_DGRAM, 0);
 	if (sd == INVALID_SOCKET)
 	{
-		fprintf(stderr, "Could not create socket.\n");
+		fprintf(stderr, "Could not create socket. #%d\n", WSAGetLastError());
 		WSACleanup();
 		return -1;
 	}
+	sock_opened = true;
 
 	/* Clear out server struct */
 	memset((void *)&server, '\0', sizeof(struct sockaddr_in));
@@ -70,9 +75,10 @@ int UDPClient::init(std::string serverAddress, unsigned short portNumber)
 	/* Check for NULL pointer */
 	if (hp == NULL)
 	{
-		fprintf(stderr, "Could not get host name.\n");
+		fprintf(stderr, "Could not get host name. #%d\n", WSAGetLastError());
 		closesocket(sd);
 		WSACleanup();
+		sock_opened = false;
 		return -1;
 	}
 
@@ -85,9 +91,10 @@ int UDPClient::init(std::string serverAddress, unsigned short portNumber)
 	/* Bind local address to socket */
 	if (bind(sd, (struct sockaddr *)&client, sizeof(struct sockaddr_in)) == -1)
 	{
-		fprintf(stderr, "Cannot bind address to socket.\n");
+		fprintf(stderr, "Cannot bind address to socket. #%d\n", WSAGetLastError());
 		closesocket(sd);
 		WSACleanup();
+		sock_opened = false;
 		return -1;
 	}
 
@@ -107,9 +114,10 @@ int UDPClient::udpsendto(const char* msg, int msglen)
 	server_length = sizeof(struct sockaddr_in);
 	if ((sent_len = sendto(sd, msg, msglen, 0, (struct sockaddr *)&server, server_length)) == -1)
 	{
-		fprintf(stderr, "Error transmitting data.\n");
+		fprintf(stderr, "Error transmitting data. #%d\n", WSAGetLastError());
 		closesocket(sd);
 		WSACleanup();
+		sock_opened = false;
 		return -1;
 	}
 	return sent_len;
@@ -125,9 +133,10 @@ int UDPClient::udprecvfrom(char* buffer, int buflen)
 	/* Receive time */
 	if ((received_len = recvfrom(sd, buffer, buflen, 0, (struct sockaddr *)&server, &server_length)) < 0)
 	{
-		fprintf(stderr, "Error receiving data.\n");
+		fprintf(stderr, "Error receiving data. #%d\n", WSAGetLastError());
 		closesocket(sd);
 		WSACleanup();
+		sock_opened = false;
 		return -1;
 	}
 	return received_len;

@@ -3,7 +3,10 @@
 //		* The Oculus SDK OpenGL OculusRoomTiny code
 //		* Some OpenGL code from: https://learnopengl.com/
 
+#include <thread>
+
 #include "VRApp.h"
+#include "ImageProcessor.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
@@ -17,8 +20,14 @@ static int Compare(const ovrGraphicsLuid& lhs, const ovrGraphicsLuid& rhs)
 // ---------------------------------------------------------------------------------------------------------
 void processInput(GLFWwindow *window)
 {
-	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
-		glfwSetWindowShouldClose(window, true);
+	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
+		try {
+			glfwSetWindowShouldClose(window, true);
+		}
+		catch (std::exception ex) {
+			std::cout << ex.what() << std::endl;
+		}
+	}
 }
 
 // glfw: whenever the window size changed (by OS or user resize) this callback function executes
@@ -83,7 +92,8 @@ unsigned int VRApp::loadTexture(char const * path)
 
 // utility function for loading a 2D texture from memory
 // -----------------------------------------------------
-unsigned int VRApp::loadTextureFromMemory(unsigned char* const buffer, int bufferlen) {
+unsigned int VRApp::loadTextureFromMemory(unsigned char* const buffer, int bufferlen) 
+{
 	unsigned int textureID;
 	glGenTextures(1, &textureID);
 
@@ -158,6 +168,18 @@ unsigned int VRApp::loadCubemap(std::vector<std::string> faces)
 	return textureID;
 }
 
+// utility function for saving to a file
+// -------------------------------------
+int SaveStringToFile(std::string data, std::string path)
+{
+	std::cout << data.length() << std::endl;
+	std::cout << data << std::endl;
+	std::ofstream out(path);
+	out << data;
+	out.close();
+	return 0;
+}
+
 VRApp::VRApp()
 {
 	TheOculusApp = NULL;
@@ -220,10 +242,6 @@ int VRApp::run()
 		(const char*)(resourcePath + "shaders/cubemap.vs").c_str(),
 		(const char*)(resourcePath + "shaders/cubemap.fs").c_str()
 	);
-	//Shader skyboxShader(
-	//	(const char*)(resourcePath + "shaders/skybox.vs").c_str(),
-	//	(const char*)(resourcePath + "shaders/skybox.fs").c_str()
-	//);
 	Shader skysphereShader(
 		(const char*)(resourcePath + "shaders/skysphere.vs").c_str(),
 		(const char*)(resourcePath + "shaders/skysphere.fs").c_str()
@@ -238,17 +256,6 @@ int VRApp::run()
 	// -------------
 	TheScene->cubeTexture = loadTexture((const char*)(resourcePath + "textures/container.jpg").c_str());
 
-	//std::vector<std::string> faces
-	//{
-	//	(resourcePath + "textures/skybox/right.jpg"),
-	//	(resourcePath + "textures/skybox/left.jpg"),
-	//	(resourcePath + "textures/skybox/top.jpg"),
-	//	(resourcePath + "textures/skybox/bottom.jpg"),
-	//	(resourcePath + "textures/skybox/front.jpg"),
-	//	(resourcePath + "textures/skybox/back.jpg")
-	//};
-	//TheScene->cubemapTexture = loadCubemap(faces);
-
 	unsigned int t1 = loadTexture((const char*)(resourcePath + "textures/img2.jpg").c_str());
 	unsigned int t2 = loadTexture((const char*)(resourcePath + "textures/earth.jpg").c_str());
 	TheScene->skysphereTexture = t1;
@@ -259,16 +266,18 @@ int VRApp::run()
 	shader.use();
 	shader.setInt("texture1", 0);
 
-	//skyboxShader.use();
-	//skyboxShader.setInt("skybox", 0);
-
 	skysphereShader.use();
 	skysphereShader.setInt("skysphere", 0);
+
+	// Receiving livestream
+	ImageProcessor* TheImageProcessor = new ImageProcessor();
+	int tip_flag = TheImageProcessor->init("192.168.56.1", 11000);
 
 	// Oculus: initialising and configuring
 	// ------------------------------------
 	TheOculusApp = new OculusApp();
-	if (TheOculusApp->init() > 0)
+	int num = 0;
+	if (TheOculusApp->init() > 0 || tip_flag < 0)
 		goto Done;
 
 	// Turn off vsync to let the compositor do its magic
@@ -284,6 +293,14 @@ int VRApp::run()
 		deltaTime = currentFrame - lastFrame;
 		lastFrame = currentFrame;
 
+		// Updating skysphere texture
+		if (TheImageProcessor->imageReady)
+		{
+			std::cout << "Image Length = " << TheImageProcessor->imageLength << std::endl;
+			TheScene->skysphereTexture = loadTextureFromMemory((unsigned char* const)TheImageProcessor->image, TheImageProcessor->imageLength);
+			TheImageProcessor->SignalImageUsed();
+		}
+
 		// OpenGL: rendering scene
 		// -----------------------
 		glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
@@ -292,7 +309,7 @@ int VRApp::run()
 		// Oculus: handling session status and rendering to HMD
 		// ----------------------------------------------------
 		glfwGetWindowSize(window, &SCR_WIDTH, &SCR_HEIGHT);
-		if (TheOculusApp->render(TheScene, shader, skysphereShader, SCR_WIDTH, SCR_HEIGHT) > 0)
+		if (TheOculusApp->render(TheScene, shader, skysphereShader, SCR_WIDTH, SCR_HEIGHT) != 0)
 			break;
 
 		// glfw: input
@@ -308,8 +325,10 @@ int VRApp::run()
 	// de-allocate all resources once they've outlived their purpose:
 	// --------------------------------------------------------------
 Done:
-	delete(TheScene);
-	delete(TheOculusApp);
+	std::cout << "Closing application ..." << std::endl;
+	delete TheImageProcessor;
+	delete TheScene;
+	delete TheOculusApp;
 
 	glfwTerminate();
 

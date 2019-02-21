@@ -2,29 +2,44 @@
 #include <sstream>
 #include <vector>
 #include <string>
+#include <mutex>
+#include <thread>
+#include <condition_variable>
+#include "UDPClient.h"
 
 #ifndef IMAGE_PROCESSOR_H
 #define IMAGE_PROCESSOR_H
+
+#define IMGSIZE		5000000
+#define BUFSIZE		70000
 
 class ImageProcessor
 {
 public:
 	// Variables
-	char		buffer[5000000];
-	char		image[5000000];
-	size_t		imageLength;
-	bool		stop;
-	bool		imageReady;
+	char						buffer[BUFSIZE];
+	char						image[IMGSIZE];
+	size_t						imageLength;
+	bool						bufInit;
+	int							bufPtr;
+	int							recv_len;
+	bool						stopRecv;
+	bool						imageReady;
+	UDPClient*					uc;
+	std::mutex					mtx;
+	std::condition_variable		cv;
+	std::thread					TheThread;
 
 	// Constructor & Deconstructor
 	ImageProcessor();
 	~ImageProcessor();
 
 	// Methods
+	int			init(std::string ipAddr, unsigned short portNum);
 	void		LoadImageBytesFromPath(std::string path);
 	void		ReceiveBytes();
-	int			initReceiver();
-	char*		GetImage();
+	void		SignalImageUsed();
+	char		GetStreamByte();
 };
 
 #endif //IMAGE_PROCESSOR_H
