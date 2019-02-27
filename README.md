@@ -13,6 +13,9 @@ Can download a VS 2017 (x64) version (without setting it all up again) from here
 
 ![Core Dependency Tree](https://i.ibb.co/5sWDQpD/Core-Dependency-Tree.jpg)
 
+### Minimal Dependency Tree (No includes and libraries but header-only libraries are included)
+![Minimal Dependency Tree](https://i.ibb.co/1MchgPX/Minimal-Dependency-Tree.jpg)
+
 ### How the diagrams were made
 The diagrams were made by installing `graphviz` on a Ubuntu terminal.
 
@@ -25,3 +28,5 @@ The files that were used to generate the diagrams can be found below:
 * **Full Dependency Tree:** https://pastebin.com/raw/CaqZMtcd
 
 * **Core Dependency Tree:** https://pastebin.com/raw/ek4MSy1T
+
+* **Minimal Dependency Tree:** https://pastebin.com/raw/8p4PH9ry 
